@@ -1,0 +1,14 @@
+*.swp
+package-lock.json
+__pycache__
+.pytest_cache
+.venv
+*.egg-info
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+# Ignore all s3_files/*, except the bash scripts
+s3_files/*
+!s3_files/*.sh
