@@ -211,7 +211,7 @@ class ValheimAwsStack(Stack):
                             conditions={
                                 "StringEquals": {
                                     "ec2:ResourceTag/*": [
-                                        "ValheimAwsStack/ValheimASG"
+                                        "ValheimAws/ValheimASG"
                                     ]
                                 }
                             }
@@ -249,7 +249,7 @@ class ValheimAwsStack(Stack):
                         "executionTimeout": ["3600"]
                     }),
                     "runCommandParameters": {
-                        "runCommandTargets": [{"key": "tag:Name", "values": ["ValheimAwsStack/ValheimASG"]}],
+                        "runCommandTargets": [{"key": "tag:Name", "values": ["ValheimAws/ValheimASG"]}],
                     }
                 }
             ],
