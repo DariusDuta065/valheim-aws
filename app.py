@@ -10,7 +10,7 @@ env = cdk.Environment(
     account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
 )
 
-valheim_stack = ValheimAwsStack(app, f"ValheimAwsStack", env=env)
+valheim_stack = ValheimAwsStack(app, "ValheimAws", env=env)
 cdk.Tags.of(valheim_stack).add("project", "valheim")
 
 app.synth()

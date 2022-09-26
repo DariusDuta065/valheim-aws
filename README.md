@@ -22,6 +22,18 @@
 - While deploying the `ValheimAwsStack`, to upload files to S3
   - make sure the S3 bucket has been provisioned before running this
   - `make upload`
+- Get the `ValheimAws.ValheimFunctionUrl` from the CFN Outputs
+  - pass different `action`s via the query string
+  - eg `https://kq3y3633sts2v7tkbtkwajtlsm0rglbb.lambda-url.eu-west-2.on.aws/?action=status`
+  - eg `https://kq3y3633sts2v7tkbtkwajtlsm0rglbb.lambda-url.eu-west-2.on.aws/?action=start`
+  - eg `https://kq3y3633sts2v7tkbtkwajtlsm0rglbb.lambda-url.eu-west-2.on.aws/?action=stop`
+
+## Destroying the resources
+
+- Backup the files from S3
+  - they will be downloaded into `./s3_files`
+  - `make download`
+- `make destroy`
 
 ## Lambda local invocation
 
@@ -33,6 +45,7 @@
 - Commands
 
   ```bash
+  sam local invoke ValheimLambda -t ./cdk.out/ValheimAwsStack.template.json -e ./lambda/events/status.json
   sam local invoke ValheimLambda -t ./cdk.out/ValheimAwsStack.template.json -e ./lambda/events/start.json
   sam local invoke ValheimLambda -t ./cdk.out/ValheimAwsStack.template.json -e ./lambda/events/stop.json
   ```

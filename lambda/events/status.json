@@ -1,5 +1,5 @@
 {
   "queryStringParameters": {
-    "action": "start"
+    "action": "status"
   }
 }

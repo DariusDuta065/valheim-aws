@@ -14,10 +14,13 @@ bootstrap:
 	cdk bootstrap
 
 deploy:
-	cdk deploy ValheimAwsStack --require-approval never
+	cdk deploy ValheimAws --require-approval never
 
 destroy:
 	cdk destroy --all --require-approval never
 
 upload:
 	aws s3 cp ./s3_files s3://valheim-aws/ --recursive
+
+download:
+	aws s3 cp s3://valheim-aws/ ./s3_files --recursive

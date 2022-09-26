@@ -3,34 +3,53 @@ import boto3
 
 client = boto3.client('autoscaling')
 
+
 def lambda_handler(event, context):
-    desired_capacity = 0
+    action = "stop"
 
     try:
-        assert "queryStringParameters" in event, "wrong event type provided, use function url"
-        assert "desired_capacity" in event["queryStringParameters"], "desired_capacity not specified"
-        
-        desired_capacity = int(event["queryStringParameters"]["desired_capacity"])
-        assert 0 <= desired_capacity <= 1, "desired_capacity must be 0 or 1"
-    except Exception as e:
-        print(e)
-        return { 'statusCode': 401, 'message': 'aici' }
-    
+        assert "queryStringParameters" in event, "wrong event type provided, use function url & provide `action` in the query string"
+        assert "action" in event["queryStringParameters"], "action not specified"
+        assert event["queryStringParameters"]["action"] in [
+            "status", "start", "stop"], "action must be: ['status', 'start', 'stop']"
+
+        action = event["queryStringParameters"]["action"]
+    except AssertionError as e:
+        return {'statusCode': 400, 'body': {'message': str(e)}}
+    except:
+        return {'statusCode': 500}
+
+    if action == "status":
+        return get_status()
+    return update_asg_capacity(action)
+
+
+def update_asg_capacity(action: str):
+    desired_capacity = 0 if action == "stop" else 1
+
+    try:
+        asg_name = get_asg_name()
+    except:
+        return {
+            'statusCode': 500,
+            'body': {'message': 'could not get ASG name'}
+        }
+
     try:
         res = client.update_auto_scaling_group(
-            AutoScalingGroupName=get_asg_name(),
+            AutoScalingGroupName=asg_name,
             DesiredCapacity=desired_capacity
         )
         print(res)
     except Exception as e:
         return {
             'statusCode': 500,
-            'message': e.response['Error']['Message']
+            'body': {'message': e.response['Error']['Message']}
         }
 
     return {
         'statusCode': 200,
-        'message': 'Success'
+        'body': {'message': 'success'}
     }
 
 
@@ -46,10 +65,46 @@ def get_asg_name() -> str:
             }
         ]
     )
-    
-    if "AutoScalingGroups" not in asgs or len(asgs["AutoScalingGroups"]) < 1:
-        return {
-            'statusCode': 500,
-            'message': 'Failure'
-        }
+
+    assert "AutoScalingGroups" in asgs
+    assert len(asgs["AutoScalingGroups"]) > 0
     return asgs["AutoScalingGroups"][0]["AutoScalingGroupName"]
+
+
+def get_status():
+    ec2_client = boto3.client('ec2')
+
+    try:
+        res = ec2_client.describe_instances(
+            Filters=[
+                {
+                    'Name': 'tag:project',
+                    'Values': ['valheim']
+                },
+                {
+                    'Name': 'instance-state-name',
+                    'Values': ['running']
+                }
+            ]
+        )
+        assert "Reservations" in res
+
+        if len(res["Reservations"]) > 0:
+            return {
+                'statusCode': 200,
+                'body': {
+                    'status': 'started',
+                    'ip': str(res["Reservations"][0]["Instances"][0]["PublicIpAddress"]),
+                    'launch_time': str(res["Reservations"][0]["Instances"][0]["LaunchTime"])
+                }
+            }
+        else:
+            return {
+                'statusCode': 200,
+                'body': {'status': 'shutdown'},
+            }
+
+    except AssertionError as e:
+        return {'statusCode': 500, 'body': {'message': str(e)}}
+    except:
+        return {'statusCode': 500}

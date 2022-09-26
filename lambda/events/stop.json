@@ -1,5 +1,5 @@
 {
   "queryStringParameters": {
-    "desired_capacity": 0
+    "action": "stop"
   }
 }

@@ -3,6 +3,7 @@ from re import M, T
 from aws_cdk import (
     Stack,
     Duration,
+    CfnOutput,
     RemovalPolicy,
 
     aws_s3 as _s3,
@@ -31,6 +32,7 @@ config = {
 
 
 class ValheimAwsStack(Stack):
+
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -267,9 +269,10 @@ class ValheimAwsStack(Stack):
             memory_size=512,
         )
 
-        valheim_lambda.add_function_url(
+        valheim_function_url = valheim_lambda.add_function_url(
             auth_type=_lambda.FunctionUrlAuthType.NONE
         )
+        CfnOutput(self, "ValheimFunctionUrl", value=valheim_function_url.url)
 
         valheim_lambda.add_to_role_policy(
             _iam.PolicyStatement(
@@ -286,6 +289,7 @@ class ValheimAwsStack(Stack):
             _iam.PolicyStatement(
                 effect=_iam.Effect.ALLOW,
                 actions=[
+                    "ec2:DescribeInstances",
                     "autoscaling:DescribeAutoScalingGroups",
                     "autoscaling:DescribeAutoScalingInstances",
                 ],
@@ -308,7 +312,7 @@ class ValheimAwsStack(Stack):
                     event=_eventbridge.RuleTargetInput.from_object(
                         {
                             "queryStringParameters": {
-                                "desired_capacity": 0
+                                "action": "stop"
                             }
                         })
                 )
