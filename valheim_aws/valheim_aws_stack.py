@@ -292,3 +292,25 @@ class ValheimAwsStack(Stack):
                 resources=["*"]
             )
         )
+
+        _eventbridge.Rule(
+            self, "ShutdownValheimServerRule",
+            rule_name="ShutdownValheimServer",
+            description="Shuts down the game server every night at 3AM, preventing additional costs",
+
+            schedule=_eventbridge.Schedule.cron(
+                minute="00",
+                hour="03"
+            ),
+            targets=[
+                _targets.LambdaFunction(
+                    valheim_lambda,
+                    event=_eventbridge.RuleTargetInput.from_object(
+                        {
+                            "queryStringParameters": {
+                                "desired_capacity": 0
+                            }
+                        })
+                )
+            ]
+        )
