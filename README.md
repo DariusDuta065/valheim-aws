@@ -23,6 +23,20 @@
   - make sure the S3 bucket has been provisioned before running this
   - `make upload`
 
+## Lambda local invocation
+
+- Uses [SAM](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html), so `sam` must be installed and working
+- Run `make synth` first of all, such that `./cdk.out` will contain the template JSON file
+- The events are available in `./lambda/events`
+  - `start.json` -- sets the desired_capacity of the ASG to `1`, thus starting the game server
+  - `stop.json` -- sets the desired_capacity of the ASG back to `0`
+- Commands
+
+  ```bash
+  sam local invoke ValheimLambda -t ./cdk.out/ValheimAwsStack.template.json -e ./lambda/events/start.json
+  sam local invoke ValheimLambda -t ./cdk.out/ValheimAwsStack.template.json -e ./lambda/events/stop.json
+  ```
+
 ## venv commands
 
 To manually create a virtualenv on MacOS and Linux:

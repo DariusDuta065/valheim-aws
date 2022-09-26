@@ -1,4 +1,5 @@
 import json
+from re import M, T
 from aws_cdk import (
     Stack,
     Duration,
@@ -7,7 +8,9 @@ from aws_cdk import (
     aws_s3 as _s3,
     aws_ec2 as _ec2,
     aws_iam as _iam,
+    aws_lambda as _lambda,
     aws_events as _eventbridge,
+    aws_events_targets as _targets,
     aws_autoscaling as _autoscaling,
 )
 from constructs import Construct
@@ -31,13 +34,20 @@ class ValheimAwsStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        s3_bucket = _s3.Bucket(
+        s3_bucket = self.configure_s3_bucket()
+        self.configure_asg(s3_bucket)
+        self.configure_event_bridge()
+        self.configure_lambda()
+
+    def configure_s3_bucket(self) -> _s3.Bucket:
+        return _s3.Bucket(
             self, "ValheimS3Bucket",
             bucket_name=config["bucket_name"],
             auto_delete_objects=True,
             removal_policy=RemovalPolicy.DESTROY
         )
 
+    def configure_asg(self, s3_bucket: _s3.Bucket):
         valheim_vpc = _ec2.Vpc(
             self, "ValheimVpc",
             cidr=config["vpc_cidr"],
@@ -176,8 +186,6 @@ class ValheimAwsStack(Stack):
             lifecycle_transition=_autoscaling.LifecycleTransition.INSTANCE_TERMINATING,
         )
 
-        self.configure_event_bridge()
-
     def configure_event_bridge(self):
         eventbridge_role = _iam.Role(
             self, "EventBridgeInvokeRunCommand",
@@ -243,4 +251,44 @@ class ValheimAwsStack(Stack):
                     }
                 }
             ],
+        )
+
+    def configure_lambda(self):
+
+        valheim_lambda = _lambda.Function(
+            self, "ValheimLambda",
+            description="Valheim game server controller",
+
+            runtime=_lambda.Runtime.PYTHON_3_9,
+            handler='handler.lambda_handler',
+            code=_lambda.Code.from_asset('lambda'),
+
+            timeout=Duration.minutes(1),
+            memory_size=512,
+        )
+
+        valheim_lambda.add_function_url(
+            auth_type=_lambda.FunctionUrlAuthType.NONE
+        )
+
+        valheim_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=[
+                    "autoscaling:UpdateAutoScalingGroup",
+                ],
+                resources=[
+                    f"arn:aws:autoscaling:{Stack.of(self).region}:{Stack.of(self).account}:autoScalingGroup:*:autoScalingGroupName/*"
+                ]
+            )
+        )
+        valheim_lambda.add_to_role_policy(
+            _iam.PolicyStatement(
+                effect=_iam.Effect.ALLOW,
+                actions=[
+                    "autoscaling:DescribeAutoScalingGroups",
+                    "autoscaling:DescribeAutoScalingInstances",
+                ],
+                resources=["*"]
+            )
         )
