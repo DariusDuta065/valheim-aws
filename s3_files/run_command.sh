@@ -12,3 +12,5 @@ ASG_NAME=`aws autoscaling describe-auto-scaling-instances --region $REGION --ins
 LIFECYCLE_NAME="TestHook"
 
 aws autoscaling complete-lifecycle-action --lifecycle-action-result CONTINUE --region $REGION --lifecycle-hook-name $LIFECYCLE_NAME --auto-scaling-group-name $ASG_NAME --instance-id $INSTANCE_ID
+
+# aws autoscaling describe-auto-scaling-groups --filters Name=tag:project,Values=valheim | jq -r ".AutoScalingGroups[0].AutoScalingGroupName"

@@ -10,13 +10,18 @@
 
 ## Deployment commands
 
-- Activate virtual environment `.venv/bin/activate`
-- `pip install -r requirements.txt`
-- `pip install -r requirements-dev.txt`
-- `make bootstrap`
-- `make synth | less`
-- `make deploy`
-- while deploying, but after the S3 bucket was provisioned, `make upload`
+- Activate virtual environment
+  - `source .venv/bin/activate`
+- Install requirements
+  - `pip install -r requirements.txt`
+  - `pip install -r requirements-dev.txt`
+- Deploy infra using CDK
+  - `make bootstrap`
+  - `make synth | less`
+  - `make deploy`
+- While deploying the `ValheimAwsStack`, to upload files to S3
+  - make sure the S3 bucket has been provisioned before running this
+  - `make upload`
 
 ## venv commands
 
