@@ -1,5 +1,4 @@
 import json
-from re import M, T
 from aws_cdk import (
     Stack,
     Duration,
@@ -19,9 +18,7 @@ from constructs import Construct
 
 config = {
     "bucket_name": "valheim-aws",
-    "ami_map": {
-        "eu-west-2": "ami-04842bc62789b682e"  # Ubuntu 20.04, x86
-    },
+    "ami_name": "valheim-ami",
     "desired_capacity": 0,
 
     "vpc_cidr": "10.0.0.0/24",
@@ -99,18 +96,6 @@ class ValheimAwsStack(Stack):
         )
         s3_bucket.grant_read_write(ec2_role)
 
-        user_data = _ec2.UserData.for_linux()
-        commands = [
-            'apt update -y',
-            'apt install -y python3-pip python-setuptools awscli',
-            'pip3 install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz',
-            'mkdir -p /opt/aws/bin/',
-            'ln /usr/local/bin/cfn-init /opt/aws/bin/cfn-init',
-            'ln /usr/local/bin/cfn-signal /opt/aws/bin/cfn-signal'
-        ]
-        for command in commands:
-            user_data.add_commands(command)
-
         asg = _autoscaling.AutoScalingGroup(
             self, "ValheimASG",
             vpc=valheim_vpc,
@@ -129,7 +114,7 @@ class ValheimAwsStack(Stack):
             ),
 
             role=ec2_role,
-            machine_image=_ec2.MachineImage.generic_linux(config["ami_map"]),
+            machine_image=_ec2.MachineImage.lookup(name=config["ami_name"]),
 
             block_devices=[
                 _autoscaling.BlockDevice(
@@ -176,8 +161,6 @@ class ValheimAwsStack(Stack):
                 count=int(config["desired_capacity"]),
                 timeout=Duration.minutes(30)
             ),
-
-            user_data=user_data,
         )
 
         asg.add_lifecycle_hook(
